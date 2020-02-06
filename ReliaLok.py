@@ -121,7 +121,7 @@ class ReliaLok():
         except _thread.error as err:
             self.print_tb("Failed to start status thread: {error}.".format(error=err))
 
-    def _status_query(self, thread_name, delay):
+    def _status_query(self, thread_name:str, delay:int):
         while self.continue_query:
             self.write('STATUS?')
         return
@@ -129,13 +129,13 @@ class ReliaLok():
         self.continue_query = False
         return
 
-    def write(self, message):
+    def write(self, message:str):
         self.serial.write(message.encode())
         self.serial.flush()
         line = self.serial.readline().decode()
         self.print_tb("Initialization check: {resp}".format(resp=line))
 
-    def print_tb(self, str):
+    def print_tb(self, str:str):
         self.scroll_text.insert(INSERT, '[{ts}] {msg}\n'.format(ts=time.ctime(time.time())[11:-5], msg=str))
 
 if __name__ == '__main__':
