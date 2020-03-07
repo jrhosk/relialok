@@ -4,6 +4,7 @@ import tk_tools
 import serial.tools.list_ports
 import time
 import _thread
+import sys
 
 from tkinter import *
 from tkinter import scrolledtext
@@ -13,7 +14,8 @@ class ReliaLok():
     def __init__(self, root):
         self.serial = serial.Serial()
         self.com_set = False
-        self.continue_query = False
+        self.continue_query = True
+        self.resource_free = True
         self.port = StringVar()
 
         self.root = root
@@ -161,10 +163,10 @@ class ReliaLok():
         self.com_ports = [comport.device for comport in serial.tools.list_ports.comports()]
 
         self.option = OptionMenu(self.frame4, self.port, *self.com_ports).pack(side=LEFT)
-        self.status_button = Button(self.frame4, text="Status", height = 2, width = 18, pady = 5, command=self.get_status).pack(side=LEFT)
+        self.status_button = Button(self.frame4, text="Status", height = 2, width = 18, pady = 5, command=self._get_status).pack(side=LEFT)
+        self.init_button = Button(self.frame4, text="Initialize", height=2, width=18, pady=5, command=self._listen_thread).pack(side=LEFT)
         self.connect_button = Button(self.frame4, text="Connect", height=2, width=18, pady = 5, command=self.connect).pack(side=LEFT)
         self.stop_button = Button(self.frame4, text="Stop", height = 2, width = 18, pady = 5, background ="red", command=self._stop_query).pack(side=LEFT)
-
         self.scroll_text = scrolledtext.ScrolledText(self.frame3, width = 100, height = 20)
         self.scroll_text.pack(side=LEFT)
         self.print_tb("Initializing ReliaLok: QuadLock Edition ...")
@@ -182,8 +184,35 @@ class ReliaLok():
             pass
         return
 
-    def get_status(self):
-        self.continue_query = True
+    def _listen(self, thread_name:str, delay:int):
+        print('Beginning listening thread ...\n')
+        try:
+            while self.continue_query:
+                if self.serial.inWaiting() and self.resource_free:
+                    self.serial.flush()
+                    line = self.serial.readline().decode()
+                    self.print_tb("Interrupt: {msg}".format(msg=line))
+                else:
+                    pass
+
+        except _thread.error as err:
+            self.print_tb("Failed to start status thread: {error}.".format(error=err))
+            pass
+        except:
+            e = sys.exc_info()[0]
+            self.print_tb("Exception thrown: {error}.".format(error=e))
+            pass
+
+    def _listen_thread(self):
+        try:
+            _thread.start_new_thread(self._listen, ('thread-2', 1))
+        except _thread.error as err:
+            self.print_tb("Failed to start status thread: {error}.".format(error=err))
+            pass
+
+    def _get_status(self):
+        self.resource_free = False
+        self.print_tb("Entering queue for resource.")
         try:
             _thread.start_new_thread(self._status_query, ('thread-1', 1))
         except _thread.error as err:
@@ -192,14 +221,17 @@ class ReliaLok():
 
     def _status_query(self, thread_name:str, delay:int):
         try:
-            while self.continue_query:
-                self.write('STATUS?')
+            self.write('STATUS?')
         except serial.serialutil.SerialException:
             self.print_tb("Serial port: {port} not connected ...\n".format(port=self.port.get()))
             pass
-        
+        self.print_tb("Exiting queue for resource.")
+        self.resource_free = True
+
+
     def _stop_query(self):
         self.continue_query = False
+        self.print_tb("Stopping.")
         return
 
     def write(self, message:str):
