@@ -49,9 +49,6 @@ class SerialPort(QObject):
 
     @relialok.logger.function_log
     def disconnect(self):
-        if self.serial.is_open:
-            self.resource_free = False
-            self.connection_active = False
-            self.serial.close()
-        else:
-            pass
+       self.resource_free = False
+       self.connection_active = False
+       self.serial.close()

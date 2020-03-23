@@ -1,5 +1,4 @@
 from PyQt5 import QtCore
-from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QThreadPool
 from PyQt5 import QtGui
 from PyQt5.QtGui import QTextCursor
@@ -459,36 +458,36 @@ class RelialokMainWindow(object):
 
 
     def listen_port(self):
-        try:
-            if not self.serial._is_open():
-                self.print_output('Connection not active. Please connect.')
+        if self.serial.is_open:
+            try:
+                # Pass the function to execute
+                worker = WorkerThreading.Worker(self.serial.listen_port)
+                worker.signals.result.connect(self.decode)
+                #        worker.signals.finished.connect(self.thread_complete)
+                worker.signals.progress.connect(self.data_received)
 
-            # Pass the function to execute
-            worker = WorkerThreading.Worker(self.serial.listen_port)
-            worker.signals.result.connect(self.decode)
-            #        worker.signals.finished.connect(self.thread_complete)
-            worker.signals.progress.connect(self.data_received)
-
-            # Execute
-            self.threadpool.start(worker)
-        except Exception as ex:
-            self.print_output('Error listening on port: {0}. Check log for more details.'.format(ex))
-
+                # Execute
+                self.threadpool.start(worker)
+            except Exception as ex:
+                self.print_output('Error listening on port: {0}. Check log for more details.'.format(ex))
+        else:
+            self.print_output('Connection not active. Please connect.')
+            return
 
     def read_port(self):
-        try:
-            if not self.serial._is_open:
-                self.print_output('Connection not active. Please connect.')
-
-            # Pass the function to execute
-            worker = WorkerThreading.Worker(self.serial.read_port)
-            worker.signals.result.connect(self.decode)
-    #        worker.signals.finished.connect(self.thread_complete)
-            # Execute
-            self.threadpool.start(worker)
-        except Exception as ex:
-            self.print_output('Error reading on port: {0}. Check log for more details.'.format(ex))
-    
+        if self.serial.is_open:
+            try:
+                # Pass the function to execute
+                worker = WorkerThreading.Worker(self.serial.read_port)
+                worker.signals.result.connect(self.decode)
+        #        worker.signals.finished.connect(self.thread_complete)
+                # Execute
+                self.threadpool.start(worker)
+            except Exception as ex:
+                self.print_output('Error reading on port: {0}. Check log for more details.'.format(ex))
+        else:
+            self.print_output('Connection not active. Please connect.')
+            return
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
