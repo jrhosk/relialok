@@ -32,16 +32,26 @@ class SerialPort(QObject):
     def listen_port(self, progress_callback):
         print('Listening on {port}'.format(port=self.port))
         while self.connection_active:
-            if self.serial.inWaiting() and self.resource_free:
-                self.serial.flush()
-                line = self.serial.readline().decode()
-                print("Response check: {resp}".format(resp=line))
-                progress_callback.emit(line)
-            else:
-                pass
+            try:
+                if self.serial.inWaiting() and self.resource_free:
+                    self.serial.flush()
+                    line = self.serial.readline().decode()
+                    print("Response check: {resp}".format(resp=line))
+                    progress_callback.emit(line)
+                else:
+                    pass
+            except serial.serialutil.SerialException:
+                print('Listening error occurred.')
+
+    @relialok.logger.function_log
+    def _is_open(self):
+        return self.serial.is_open
 
     @relialok.logger.function_log
     def disconnect(self):
-        self.resource_free = False
-        self.connection_active = False
-        self.serial.close()
+        if self.serial.is_open:
+            self.resource_free = False
+            self.connection_active = False
+            self.serial.close()
+        else:
+            pass

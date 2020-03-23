@@ -6,22 +6,20 @@ from PyQt5.QtGui import QTextCursor
 from PyQt5 import QtWidgets
 
 from relialok import *
-
 import serial
 import serial.tools.list_ports
-
 import time
 import sys
 
-#from LedIndicatorWidget import LedIndicator
-
-class Ui_MainWindow(object):
-    def __init__(self, *args, **kwargs):
+class RelialokMainWindow(object):
+    def __init__(self, MainWindow, *args, **kwargs):
 
         # Class variables and flags
         self.com_set = False
         self.continue_query = True
         self.com_ports = [comport.device for comport in serial.tools.list_ports.comports()]
+        self.serial = serial.Serial()
+        self.setup_ui(MainWindow)
 
 
     def setup_ui(self, MainWindow):
@@ -35,12 +33,15 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
 
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(750, 650, 75, 23))
+        self.pushButton.setGeometry(QtCore.QRect(670, 650, 75, 23))
         self.pushButton.setObjectName("pushButton")
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(830, 650, 75, 23))
+        self.pushButton_2.setGeometry(QtCore.QRect(750, 650, 75, 23))
         self.pushButton_2.setAutoFillBackground(True)
         self.pushButton_2.setObjectName("pushButton_2")
+        self.pushButton_7 = QtWidgets.QPushButton(self.centralwidget)
+        self.pushButton_7.setGeometry(QtCore.QRect(830, 650, 75, 23))
+        self.pushButton_7.setObjectName("pushButton_7")
 
         self.textBox = QtWidgets.QTextEdit(self.centralwidget)
         self.textBox.setGeometry(QtCore.QRect(20, 240, 881, 381))
@@ -368,6 +369,7 @@ class Ui_MainWindow(object):
         self.pushButton_3.clicked.connect(self.listen_port)
         self.pushButton_4.clicked.connect(self.read_port)
         self.pushButton_6.clicked.connect(lambda: self.decode('DISABLE '))
+        self.pushButton_7.clicked.connect(self.close)
 
 
     def retranslateUi(self, MainWindow):
@@ -379,6 +381,7 @@ class Ui_MainWindow(object):
         self.pushButton_4.setText(_translate("MainWindow", "Status"))
         self.pushButton_5.setText(_translate("MainWindow", "Reset"))
         self.pushButton_6.setText(_translate("MainWindow", "Disable"))
+        self.pushButton_7.setText(_translate("MainWindow", "Close"))
         self.label_5.setText(_translate("MainWindow", "5"))
         self.label_6.setText(_translate("MainWindow", "6"))
         self.label.setText(_translate("MainWindow", "1"))
@@ -397,13 +400,22 @@ class Ui_MainWindow(object):
     def connect(self):
         self.print_output("Initializing serial connection on port: {port}".format(port=self.comboBox.currentText()))
         self.serial = SerialPort(self.comboBox.currentText())
+        self.connection_open = True
+
+    def close(self):
+        MainWindow.close()
 
 
     def disconnect(self):
-        self.print_output("Disconnecting serial connection on port: {port}".format(port=self.comboBox.currentText()))
-        self.threadpool.waitForDone(2000)
-        self.serial.disconnect()
-
+        if self.serial.is_open:
+            try:
+                self.print_output("Disconnecting serial connection on port: {port}".format(port=self.comboBox.currentText()))
+                self.threadpool.waitForDone(2000)
+                self.serial.disconnect()
+            except Exception as ex:
+                pass
+        else:
+            self.print_output('Connection not active. Please connect.')
  
     def print_output(self, s):
         self.cursor.setPosition(0)
@@ -447,18 +459,27 @@ class Ui_MainWindow(object):
 
 
     def listen_port(self):
-        # Pass the function to execute
-        worker = WorkerThreading.Worker(self.serial.listen_port)
-        worker.signals.result.connect(self.decode)
-        #        worker.signals.finished.connect(self.thread_complete)
-        worker.signals.progress.connect(self.data_received)
+        try:
+            if not self.serial._is_open():
+                self.print_output('Connection not active. Please connect.')
 
-        # Execute
-        self.threadpool.start(worker)
+            # Pass the function to execute
+            worker = WorkerThreading.Worker(self.serial.listen_port)
+            worker.signals.result.connect(self.decode)
+            #        worker.signals.finished.connect(self.thread_complete)
+            worker.signals.progress.connect(self.data_received)
+
+            # Execute
+            self.threadpool.start(worker)
+        except Exception as ex:
+            self.print_output('Error listening on port: {0}. Check log for more details.'.format(ex))
 
 
     def read_port(self):
         try:
+            if not self.serial._is_open:
+                self.print_output('Connection not active. Please connect.')
+
             # Pass the function to execute
             worker = WorkerThreading.Worker(self.serial.read_port)
             worker.signals.result.connect(self.decode)
@@ -466,13 +487,12 @@ class Ui_MainWindow(object):
             # Execute
             self.threadpool.start(worker)
         except Exception as ex:
-            self.print_output(ex)
+            self.print_output('Error reading on port: {0}. Check log for more details.'.format(ex))
     
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setup_ui(MainWindow)
+    ui = RelialokMainWindow(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
