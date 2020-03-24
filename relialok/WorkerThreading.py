@@ -3,6 +3,8 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtCore import QRunnable
 import relialok.logger
+import traceback
+import sys
 
 class WorkerSignals(QObject):
     '''

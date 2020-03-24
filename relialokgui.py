@@ -12,6 +12,14 @@ import sys
 
 class RelialokMainWindow(object):
     def __init__(self, MainWindow, *args, **kwargs):
+        '''
+        Main front-end GUI class. Defines backend functions for hardware interface and front-end widgets for control and
+        monitoring of interlock.
+
+        :param MainWindow:
+        :param args: MainWindow (QtWidgets.QMainWindow())
+        :param kwargs:
+        '''
 
         # Class variables and flags
         self.com_set = False
@@ -22,6 +30,9 @@ class RelialokMainWindow(object):
 
 
     def setup_ui(self, MainWindow):
+        '''
+        Definition of GUI widgets, positioning, and framing. Also connects functions to widget hooks.
+        '''
         # Gui definition
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(933, 725)
@@ -266,23 +277,6 @@ class RelialokMainWindow(object):
         self.gridLayout_3.addWidget(self.led_off_8, 2, 7, 1, 1)
         self.led_off_8.setChecked(False)
 
-        self.dispatcher = {'FAULT':[self.led_f1.setChecked,
-                                     self.led_f2.setChecked,
-                                     self.led_f3.setChecked,
-                                     self.led_f4.setChecked,
-                                     self.led_f5.setChecked,
-                                     self.led_f6.setChecked,
-                                     self.led_f7.setChecked,
-                                     self.led_f8.setChecked],
-                           'ON-OFF':[[self.led_on_1.setChecked, self.led_off_1.setChecked],
-                                    [self.led_on_2.setChecked, self.led_off_2.setChecked],
-                                    [self.led_on_3.setChecked, self.led_off_3.setChecked],
-                                    [self.led_on_4.setChecked, self.led_off_4.setChecked],
-                                    [self.led_on_5.setChecked, self.led_off_5.setChecked],
-                                    [self.led_on_6.setChecked, self.led_off_6.setChecked],
-                                    [self.led_on_7.setChecked, self.led_off_7.setChecked],
-                                    [self.led_on_8.setChecked, self.led_off_8.setChecked]]}
-
 
         self.gridLayout_2.addWidget(self.widget, 0, 0, 1, 1)
         self.comboBox = QtWidgets.QComboBox(self.centralwidget)
@@ -362,16 +356,38 @@ class RelialokMainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.dispatcher = {'FAULT': [self.led_f1.setChecked,
+                                     self.led_f2.setChecked,
+                                     self.led_f3.setChecked,
+                                     self.led_f4.setChecked,
+                                     self.led_f5.setChecked,
+                                     self.led_f6.setChecked,
+                                     self.led_f7.setChecked,
+                                     self.led_f8.setChecked],
+                           'ON-OFF': [[self.led_on_1.setChecked, self.led_off_1.setChecked],
+                                      [self.led_on_2.setChecked, self.led_off_2.setChecked],
+                                      [self.led_on_3.setChecked, self.led_off_3.setChecked],
+                                      [self.led_on_4.setChecked, self.led_off_4.setChecked],
+                                      [self.led_on_5.setChecked, self.led_off_5.setChecked],
+                                      [self.led_on_6.setChecked, self.led_off_6.setChecked],
+                                      [self.led_on_7.setChecked, self.led_off_7.setChecked],
+                                      [self.led_on_8.setChecked, self.led_off_8.setChecked]]}
+
         # Button hooks
         self.pushButton.clicked.connect(self.connect)
         self.pushButton_2.clicked.connect(self.disconnect)
-        self.pushButton_3.clicked.connect(self.listen_port)
-        self.pushButton_4.clicked.connect(self.read_port)
+        self.pushButton_3.clicked.connect(self.listen)
+        self.pushButton_4.clicked.connect(self.get_status)
         self.pushButton_6.clicked.connect(lambda: self.decode('DISABLE '))
         self.pushButton_7.clicked.connect(self.close)
 
 
     def retranslateUi(self, MainWindow):
+        '''
+        Redefines label and button names for front-end usages.
+        :param MainWindow: QtWidgets.QMainWindow()
+        :return: None
+        '''
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.pushButton.setText(_translate("MainWindow", "Connect"))
@@ -397,15 +413,29 @@ class RelialokMainWindow(object):
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
     def connect(self):
+        '''
+        Create instance of serial port handler, SerialPort(). Passes combo boxx selection containing current serial port.
+        :return: None
+        '''
         self.print_output("Initializing serial connection on port: {port}".format(port=self.comboBox.currentText()))
         self.serial = SerialPort(self.comboBox.currentText())
         self.connection_open = True
 
     def close(self):
+        '''
+        Ends MainWindow session.
+        :return: None
+        '''
         MainWindow.close()
 
 
     def disconnect(self):
+        '''
+        Waits for completion of current thread in threadpool and closes serial port connection. If current connection
+        doesn't exist, function passes and does nothing.
+        :return: None
+        '''
+
         if self.serial.is_open:
             try:
                 self.print_output("Disconnecting serial connection on port: {port}".format(port=self.comboBox.currentText()))
@@ -417,11 +447,23 @@ class RelialokMainWindow(object):
             self.print_output('Connection not active. Please connect.')
  
     def print_output(self, s):
+        '''
+        Wrapper function to print to front-end text box.
+        :param s: string-type to send to text box.
+        :return: None
+        '''
+
         self.cursor.setPosition(0)
         self.textBox.setTextCursor(self.cursor)
         self.textBox.insertPlainText('[{ts}] {msg}\n'.format(ts=time.ctime(time.time())[11:-5], msg=s))
 
     def decode(self, reply):
+        '''
+        Parses and decodes incoming communication from hardware device.
+        :param reply: string-type reply or interrupt message from hardware.
+        :return: None
+        '''
+
         self.print_output('Decoding response ...')
         type, reply = reply.split(' ')
         reply = reply.strip()
@@ -457,11 +499,17 @@ class RelialokMainWindow(object):
         self.print_output(data)
 
 
-    def listen_port(self):
+    def listen(self):
+        '''
+        Spanwns polling thread to look for interrupt communication form hardware device at COM port. Function has
+        secondary priority to serial port resource.
+        :return: None
+        '''
+
         if self.serial.is_open:
             try:
                 # Pass the function to execute
-                worker = WorkerThreading.Worker(self.serial.listen_port)
+                worker = WorkerThreading.Worker(self.serial.listen)
                 worker.signals.result.connect(self.decode)
                 #        worker.signals.finished.connect(self.thread_complete)
                 worker.signals.progress.connect(self.data_received)
@@ -474,11 +522,18 @@ class RelialokMainWindow(object):
             self.print_output('Connection not active. Please connect.')
             return
 
-    def read_port(self):
-        if self.serial.is_open:
+    def get_status(self):
+        '''
+        Spawns thread for sending command to hardware. Sends STATUS? command to hardware ans then waits for reply. Reply
+        is sent to decode fucntion. Has top priority to serial port resource.
+        :param cmd:
+        :return:
+        '''
+
+        if self.serial._is_open():
             try:
                 # Pass the function to execute
-                worker = WorkerThreading.Worker(self.serial.read_port)
+                worker = WorkerThreading.Worker(self.serial.send, command='STATUS?')
                 worker.signals.result.connect(self.decode)
         #        worker.signals.finished.connect(self.thread_complete)
                 # Execute

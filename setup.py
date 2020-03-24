@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="relialok-pkg-jrhosk", # Replace with your own username
+    name="relialok",
     version="0.1.1",
     author="Joshua Hoskins",
     author_email="jhoskins@jlab.org",

@@ -14,11 +14,18 @@ class SerialPort(QObject):
         self.serial = serial.Serial(self.port, '9600', timeout=5)
 
     @relialok.logger.function_log
-    def read_port(self, progress_callback):
+    def send(self, progress_callback=None, *args, **kwargs):
+        '''
+        Send command to serial port if resource is not currently in use and wait for reply.
+        :param cmd: hardware command
+        :param progress_callback: signal handler (unused currently)
+        :return:
+        '''
+        self.command = kwargs['command']
         self.resource_free = False
         try:
             print('Reading serial port on {port}'.format(port=self.port))
-            self.serial.write('STATUS?\n'.encode())
+            self.serial.write('{cmd}\n'.format(cmd=self.command).encode())
             self.serial.flush()
             line = self.serial.readline().decode()
             print("Initialization check: {resp}".format(resp=line))
@@ -29,7 +36,12 @@ class SerialPort(QObject):
             print('Read failed.')
 
     @relialok.logger.function_log
-    def listen_port(self, progress_callback):
+    def listen(self, progress_callback):
+        '''
+        Monitors serial port for incoming data and passes it to decoding function via progress_callback signal.
+        :param progress_callback: Generates a signal to pass data to the decoding function from within the thread.
+        :return: None
+        '''
         print('Listening on {port}'.format(port=self.port))
         while self.connection_active:
             try:
@@ -45,10 +57,18 @@ class SerialPort(QObject):
 
     @relialok.logger.function_log
     def _is_open(self):
+        '''
+        Passes boolean depending on state of serial connection
+        :return: serial port connection state *True/False)
+        '''
         return self.serial.is_open
 
     @relialok.logger.function_log
     def disconnect(self):
-       self.resource_free = False
-       self.connection_active = False
-       self.serial.close()
+        '''
+        Close serial port connection.
+        :return: None
+        '''
+        self.resource_free = False
+        self.connection_active = False
+        self.serial.close()
