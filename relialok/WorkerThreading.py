@@ -2,7 +2,7 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtCore import QRunnable
-import relialok.logger
+import relialok.Logger
 import traceback
 import sys
 
@@ -25,6 +25,7 @@ class WorkerSignals(QObject):
         `int` indicating % progress
 
     '''
+
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
     result = pyqtSignal(object)
@@ -45,7 +46,7 @@ class Worker(QRunnable):
 
     '''
 
-    @relialok.logger.function_log
+    @relialok.Logger.function_log
     def __init__(self, fn, *args, **kwargs):
         super(Worker, self).__init__()
 
@@ -58,7 +59,7 @@ class Worker(QRunnable):
         # Add the callback to our kwargs
         self.kwargs['progress_callback'] = self.signals.progress
 
-    @relialok.logger.function_log
+    @relialok.Logger.function_log
     @pyqtSlot()
     def run(self):
         '''

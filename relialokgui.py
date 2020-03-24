@@ -10,6 +10,7 @@ import serial.tools.list_ports
 import time
 import sys
 
+
 class RelialokMainWindow(object):
     def __init__(self, MainWindow, *args, **kwargs):
         '''
@@ -18,21 +19,20 @@ class RelialokMainWindow(object):
 
         :param MainWindow:
         :param args: MainWindow (QtWidgets.QMainWindow())
-        :param kwargs:
+        :param kwargs: None
         '''
 
         # Class variables and flags
-        self.com_set = False
-        self.continue_query = True
+        self.connection_open = False
         self.com_ports = [comport.device for comport in serial.tools.list_ports.comports()]
         self.serial = serial.Serial()
         self.setup_ui(MainWindow)
-
 
     def setup_ui(self, MainWindow):
         '''
         Definition of GUI widgets, positioning, and framing. Also connects functions to widget hooks.
         '''
+
         # Gui definition
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(933, 725)
@@ -42,6 +42,7 @@ class RelialokMainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
+        # Define GUI button positions
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton.setGeometry(QtCore.QRect(670, 650, 75, 23))
         self.pushButton.setObjectName("pushButton")
@@ -53,17 +54,28 @@ class RelialokMainWindow(object):
         self.pushButton_7.setGeometry(QtCore.QRect(830, 650, 75, 23))
         self.pushButton_7.setObjectName("pushButton_7")
 
+        # Define text box
         self.textBox = QtWidgets.QTextEdit(self.centralwidget)
         self.textBox.setGeometry(QtCore.QRect(20, 240, 881, 381))
         self.textBox.setObjectName("textBox")
 
+        # Define cursor in text box
         self.cursor = QTextCursor(self.textBox.document())
 
+        # Define GUI structure & grid layout
         self.line = QtWidgets.QFrame(self.centralwidget)
         self.line.setGeometry(QtCore.QRect(20, 160, 321, 16))
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
         self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line.setObjectName("line")
+
+        self.line_2 = QtWidgets.QFrame(self.centralwidget)
+        self.line_2.setGeometry(QtCore.QRect(420, 160, 321, 20))
+        self.line_2.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line_2.setObjectName("line_2")
+        self.label_9 = QtWidgets.QLabel(self.centralwidget)
+        self.label_9.setGeometry(QtCore.QRect(360, 160, 47, 16))
 
         self.gridLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
         self.gridLayoutWidget_2.setGeometry(QtCore.QRect(759, 30, 141, 201))
@@ -72,15 +84,36 @@ class RelialokMainWindow(object):
         self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_2.setObjectName("gridLayout_2")
 
-        self.pushButton_5 = QtWidgets.QPushButton(self.gridLayoutWidget_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.pushButton_5.sizePolicy().hasHeightForWidth())
-        self.pushButton_5.setSizePolicy(sizePolicy)
-        self.pushButton_5.setObjectName("pushButton_5")
-        self.gridLayout_2.addWidget(self.pushButton_5, 4, 0, 1, 1)
+        self.horizontalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
+        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(20, 190, 721, 41))
+        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
+        self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setObjectName("horizontalLayout")
 
+        self.gridLayoutWidget = QtWidgets.QWidget(self.centralwidget)
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(20, 29, 721, 111))
+        self.gridLayoutWidget.setObjectName("gridLayoutWidget")
+        self.gridLayout_3 = QtWidgets.QGridLayout(self.gridLayoutWidget)
+        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_3.setObjectName("gridLayout_3")
+        self.gridLayout_3.setSpacing(20)
+
+        self.widget = QtWidgets.QWidget(self.gridLayoutWidget_2)
+        self.widget.setObjectName("widget")
+
+        self.gridLayout_2.addWidget(self.widget, 0, 0, 1, 1)
+        self.comboBox = QtWidgets.QComboBox(self.centralwidget)
+        self.comboBox.setGeometry(QtCore.QRect(20, 650, 69, 22))
+        self.comboBox.setObjectName("com_ports")
+        self.comboBox.addItems(self.com_ports)
+
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+
+        # Place & configure buttons
         self.pushButton_3 = QtWidgets.QPushButton(self.gridLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -100,6 +133,15 @@ class RelialokMainWindow(object):
         self.pushButton_4.setObjectName("pushButton_4")
         self.gridLayout_2.addWidget(self.pushButton_4, 2, 0, 1, 1)
 
+        self.pushButton_5 = QtWidgets.QPushButton(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.pushButton_5.sizePolicy().hasHeightForWidth())
+        self.pushButton_5.setSizePolicy(sizePolicy)
+        self.pushButton_5.setObjectName("pushButton_5")
+        self.gridLayout_2.addWidget(self.pushButton_5, 4, 0, 1, 1)
+
         self.pushButton_6 = QtWidgets.QPushButton(self.gridLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -109,29 +151,14 @@ class RelialokMainWindow(object):
         self.pushButton_6.setObjectName("pushButton_6")
         self.gridLayout_2.addWidget(self.pushButton_6, 3, 0, 1, 1)
 
-        self.widget = QtWidgets.QWidget(self.gridLayoutWidget_2)
-        self.widget.setObjectName("widget")
+        # Define readout LEDs and place in GUI structure
 
+        # Power ON light
         self.led_25 = LedIndicatorWidget.LedIndicator(color='blue')
         self.gridLayout_2.addWidget(self.led_25, 0, 0, 1, 1)
         self.led_25.setGeometry(QtCore.QRect(40, 0, 61, 31))
         self.led_25.setObjectName("led_25")
         self.led_25.setChecked(not self.led_25.isChecked())
-
-        self.horizontalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(20, 190, 721, 41))
-        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-
-        self.gridLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(20, 29, 721, 111))
-        self.gridLayoutWidget.setObjectName("gridLayoutWidget")
-        self.gridLayout_3 = QtWidgets.QGridLayout(self.gridLayoutWidget)
-        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.gridLayout_3.setObjectName("gridLayout_3")
-        self.gridLayout_3.setSpacing(20)
 
         # Fault 1
         self.led_f1 = LedIndicatorWidget.LedIndicator(color='red')
@@ -277,18 +304,7 @@ class RelialokMainWindow(object):
         self.gridLayout_3.addWidget(self.led_off_8, 2, 7, 1, 1)
         self.led_off_8.setChecked(False)
 
-
-        self.gridLayout_2.addWidget(self.widget, 0, 0, 1, 1)
-        self.comboBox = QtWidgets.QComboBox(self.centralwidget)
-        self.comboBox.setGeometry(QtCore.QRect(20, 650, 69, 22))
-        self.comboBox.setObjectName("com_ports")
-        self.comboBox.addItems(self.com_ports)
-
-        self.label_5 = QtWidgets.QLabel(self.gridLayoutWidget)
-        self.label_5.setAlignment(QtCore.Qt.AlignCenter)
-        self.label_5.setObjectName("label_5")
-        self.gridLayout_3.addWidget(self.label_5, 0, 4, 1, 1)
-
+        # Define labels & place
         self.label_6 = QtWidgets.QLabel(self.gridLayoutWidget)
         self.label_6.setAlignment(QtCore.Qt.AlignCenter)
         self.label_6.setObjectName("label_6")
@@ -299,44 +315,35 @@ class RelialokMainWindow(object):
         self.label.setObjectName("label")
         self.gridLayout_3.addWidget(self.label, 0, 0, 1, 1)
 
-        self.label_3 = QtWidgets.QLabel(self.gridLayoutWidget)
-        self.label_3.setAlignment(QtCore.Qt.AlignCenter)
-        self.label_3.setObjectName("label_3")
-        self.gridLayout_3.addWidget(self.label_3, 0, 2, 1, 1)
-
-        self.label_7 = QtWidgets.QLabel(self.gridLayoutWidget)
-        self.label_7.setAlignment(QtCore.Qt.AlignCenter)
-        self.label_7.setObjectName("label_7")
-        self.gridLayout_3.addWidget(self.label_7, 0, 6, 1, 1)
-
         self.label_2 = QtWidgets.QLabel(self.gridLayoutWidget)
         self.label_2.setAlignment(QtCore.Qt.AlignCenter)
         self.label_2.setObjectName("label_2")
         self.gridLayout_3.addWidget(self.label_2, 0, 1, 1, 1)
 
-        self.label_8 = QtWidgets.QLabel(self.gridLayoutWidget)
-        self.label_8.setAlignment(QtCore.Qt.AlignCenter)
-        self.label_8.setObjectName("label_8")
-        self.gridLayout_3.addWidget(self.label_8, 0, 7, 1, 1)
+        self.label_3 = QtWidgets.QLabel(self.gridLayoutWidget)
+        self.label_3.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_3.setObjectName("label_3")
+        self.gridLayout_3.addWidget(self.label_3, 0, 2, 1, 1)
 
         self.label_4 = QtWidgets.QLabel(self.gridLayoutWidget)
         self.label_4.setAlignment(QtCore.Qt.AlignCenter)
         self.label_4.setObjectName("label_4")
         self.gridLayout_3.addWidget(self.label_4, 0, 3, 1, 1)
 
+        self.label_5 = QtWidgets.QLabel(self.gridLayoutWidget)
+        self.label_5.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_5.setObjectName("label_5")
+        self.gridLayout_3.addWidget(self.label_5, 0, 4, 1, 1)
 
-        self.line_2 = QtWidgets.QFrame(self.centralwidget)
-        self.line_2.setGeometry(QtCore.QRect(420, 160, 321, 20))
-        self.line_2.setFrameShape(QtWidgets.QFrame.HLine)
-        self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.line_2.setObjectName("line_2")
-        self.label_9 = QtWidgets.QLabel(self.centralwidget)
-        self.label_9.setGeometry(QtCore.QRect(360, 160, 47, 16))
+        self.label_7 = QtWidgets.QLabel(self.gridLayoutWidget)
+        self.label_7.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_7.setObjectName("label_7")
+        self.gridLayout_3.addWidget(self.label_7, 0, 6, 1, 1)
 
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        font.setBold(True)
-        font.setWeight(75)
+        self.label_8 = QtWidgets.QLabel(self.gridLayoutWidget)
+        self.label_8.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_8.setObjectName("label_8")
+        self.gridLayout_3.addWidget(self.label_8, 0, 7, 1, 1)
 
         self.label_9.setFont(font)
         self.label_9.setObjectName("label_9")
@@ -355,6 +362,8 @@ class RelialokMainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        # Define function dispatcher to set state of of LED
 
         self.dispatcher = {'FAULT': [self.led_f1.setChecked,
                                      self.led_f2.setChecked,
@@ -380,7 +389,6 @@ class RelialokMainWindow(object):
         self.pushButton_4.clicked.connect(self.get_status)
         self.pushButton_6.clicked.connect(lambda: self.decode('DISABLE '))
         self.pushButton_7.clicked.connect(self.close)
-
 
     def retranslateUi(self, MainWindow):
         '''
@@ -417,6 +425,7 @@ class RelialokMainWindow(object):
         Create instance of serial port handler, SerialPort(). Passes combo boxx selection containing current serial port.
         :return: None
         '''
+
         self.print_output("Initializing serial connection on port: {port}".format(port=self.comboBox.currentText()))
         self.serial = SerialPort(self.comboBox.currentText())
         self.connection_open = True
@@ -426,8 +435,8 @@ class RelialokMainWindow(object):
         Ends MainWindow session.
         :return: None
         '''
-        MainWindow.close()
 
+        MainWindow.close()
 
     def disconnect(self):
         '''
@@ -436,16 +445,17 @@ class RelialokMainWindow(object):
         :return: None
         '''
 
-        if self.serial.is_open:
+        if self.connection_open:
             try:
-                self.print_output("Disconnecting serial connection on port: {port}".format(port=self.comboBox.currentText()))
+                self.print_output(
+                    "Disconnecting serial connection on port: {port}".format(port=self.comboBox.currentText()))
                 self.threadpool.waitForDone(2000)
                 self.serial.disconnect()
             except Exception as ex:
                 pass
         else:
             self.print_output('Connection not active. Please connect.')
- 
+
     def print_output(self, s):
         '''
         Wrapper function to print to front-end text box.
@@ -493,11 +503,9 @@ class RelialokMainWindow(object):
         else:
             pass
 
-
     def data_received(self, data):
         print('Data at COM port:')
         self.print_output(data)
-
 
     def listen(self):
         '''
@@ -506,7 +514,7 @@ class RelialokMainWindow(object):
         :return: None
         '''
 
-        if self.serial.is_open:
+        if self.connection_open:
             try:
                 # Pass the function to execute
                 worker = WorkerThreading.Worker(self.serial.listen)
@@ -530,12 +538,12 @@ class RelialokMainWindow(object):
         :return:
         '''
 
-        if self.serial._is_open():
+        if self.connection_open:
             try:
                 # Pass the function to execute
                 worker = WorkerThreading.Worker(self.serial.send, command='STATUS?')
                 worker.signals.result.connect(self.decode)
-        #        worker.signals.finished.connect(self.thread_complete)
+                #        worker.signals.finished.connect(self.thread_complete)
                 # Execute
                 self.threadpool.start(worker)
             except Exception as ex:
@@ -543,6 +551,7 @@ class RelialokMainWindow(object):
         else:
             self.print_output('Connection not active. Please connect.')
             return
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
