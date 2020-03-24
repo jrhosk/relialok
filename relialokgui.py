@@ -158,7 +158,7 @@ class RelialokMainWindow(object):
         self.gridLayout_2.addWidget(self.led_25, 0, 0, 1, 1)
         self.led_25.setGeometry(QtCore.QRect(40, 0, 61, 31))
         self.led_25.setObjectName("led_25")
-        self.led_25.setChecked(not self.led_25.isChecked())
+        self.led_25.setChecked(False)
 
         # Fault 1
         self.led_f1 = LedIndicatorWidget.LedIndicator(color='red')
@@ -435,7 +435,8 @@ class RelialokMainWindow(object):
         Ends MainWindow session.
         :return: None
         '''
-
+        self.threadpool.waitForDone(2000)
+        self.serial.disconnect()
         MainWindow.close()
 
     def disconnect(self):
@@ -450,7 +451,9 @@ class RelialokMainWindow(object):
                 self.print_output(
                     "Disconnecting serial connection on port: {port}".format(port=self.comboBox.currentText()))
                 self.threadpool.waitForDone(2000)
+                self.threadpool.clear()
                 self.serial.disconnect()
+                self.led_25.setChecked(False)
             except Exception as ex:
                 pass
         else:
@@ -467,7 +470,7 @@ class RelialokMainWindow(object):
         self.textBox.setTextCursor(self.cursor)
         self.textBox.insertPlainText('[{ts}] {msg}\n'.format(ts=time.ctime(time.time())[11:-5], msg=s))
 
-    def decode(self, reply):
+    def decode(self, message):
         '''
         Parses and decodes incoming communication from hardware device.
         :param reply: string-type reply or interrupt message from hardware.
@@ -475,33 +478,37 @@ class RelialokMainWindow(object):
         '''
 
         self.print_output('Decoding response ...')
-        type, reply = reply.split(' ')
-        reply = reply.strip()
+        try:
+            type, reply = message.split(' ')
+            reply = reply.strip()
 
-        self.status = reply[::2]
-        self.state = reply[1::2]
-        self.status = [bool(int(self.status[i])) for i in range(len(self.status))]
-        self.state = [bool(int(self.state[i])) for i in range(len(self.state))]
+            self.status = reply[::2]
+            self.state = reply[1::2]
+            self.status = [bool(int(self.status[i])) for i in range(len(self.status))]
+            self.state = [bool(int(self.state[i])) for i in range(len(self.state))]
 
-        if type == 'STATUS':
-            for (on, off), i in zip(self.dispatcher['ON-OFF'], range(len(self.dispatcher['ON-OFF']))):
-                if not self.status[i]:
+            if type == 'STATUS':
+                for (on, off), i in zip(self.dispatcher['ON-OFF'], range(len(self.dispatcher['ON-OFF']))):
+                    if not self.status[i]:
+                        on(False)
+                        off(False)
+                    else:
+                        on(self.state[i])
+                        off(not self.state[i])
+            elif type == 'DISABLE':
+                for (on, off), i in zip(self.dispatcher['ON-OFF'], range(len(self.dispatcher['ON-OFF']))):
                     on(False)
                     off(False)
-                else:
-                    on(self.state[i])
-                    off(not self.state[i])
-        elif type == 'DISABLE':
-            for (on, off), i in zip(self.dispatcher['ON-OFF'], range(len(self.dispatcher['ON-OFF']))):
-                on(False)
-                off(False)
 
-        elif type == 'FAULT':
-            self.fault = [bool(int(self.reply[i])) for i in range(len(self.reply))]
-            for fault, i in zip(self.dispatcher['FAULT'], range(len(self.dispatcher['FAULT']))):
-                fault(self.fault[i])
-        else:
+            elif type == 'FAULT':
+                self.fault = [bool(int(self.reply[i])) for i in range(len(self.reply))]
+                for fault, i in zip(self.dispatcher['FAULT'], range(len(self.dispatcher['FAULT']))):
+                    fault(self.fault[i])
+            else:
+                pass
+        except AttributeError as ex:
             pass
+
 
     def data_received(self, data):
         print('Data at COM port:')
@@ -516,6 +523,7 @@ class RelialokMainWindow(object):
 
         if self.connection_open:
             try:
+                self.led_25.setChecked(True)
                 # Pass the function to execute
                 worker = WorkerThreading.Worker(self.serial.listen)
                 worker.signals.result.connect(self.decode)
@@ -523,7 +531,7 @@ class RelialokMainWindow(object):
                 worker.signals.progress.connect(self.data_received)
 
                 # Execute
-                self.threadpool.start(worker)
+                self.threadpool.start(worker, priority=3)
             except Exception as ex:
                 self.print_output('Error listening on port: {0}. Check log for more details.'.format(ex))
         else:
@@ -545,7 +553,7 @@ class RelialokMainWindow(object):
                 worker.signals.result.connect(self.decode)
                 #        worker.signals.finished.connect(self.thread_complete)
                 # Execute
-                self.threadpool.start(worker)
+                self.threadpool.start(worker, priority=4)
             except Exception as ex:
                 self.print_output('Error reading on port: {0}. Check log for more details.'.format(ex))
         else:

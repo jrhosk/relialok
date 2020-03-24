@@ -9,6 +9,7 @@ class SerialPort(QObject):
         self.port = port
         self.resource_free = True
         self.connection_active = True
+        self.port_release = True
 
         super(SerialPort, self).__init__(parent)
         self.serial = serial.Serial(self.port, '9600', timeout=5)
@@ -24,6 +25,10 @@ class SerialPort(QObject):
 
         self.command = kwargs['command']
         self.resource_free = False
+
+        while self.port_release == False:  # Wait for Listen to release resource
+            pass
+
         try:
             print('Reading serial port on {port}'.format(port=self.port))
             self.serial.write('{cmd}\n'.format(cmd=self.command).encode())
@@ -48,10 +53,12 @@ class SerialPort(QObject):
         while self.connection_active:
             try:
                 if self.serial.inWaiting() and self.resource_free:
+                    self.port_release = False
                     self.serial.flush()
                     line = self.serial.readline().decode()
                     print("Response check: {resp}".format(resp=line))
                     progress_callback.emit(line)
+                    self.port_release = True
                 else:
                     pass
             except serial.serialutil.SerialException:
