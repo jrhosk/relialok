@@ -25,7 +25,7 @@ class RelialokMainWindow(object):
         # Class variables and flags
         self.connection_open = False
         self.com_ports = [comport.device for comport in serial.tools.list_ports.comports()]
-        self.serial = serial.Serial()
+        self.serial = None
         self.setup_ui(MainWindow)
 
     def setup_ui(self, MainWindow):
@@ -396,6 +396,7 @@ class RelialokMainWindow(object):
         :param MainWindow: QtWidgets.QMainWindow()
         :return: None
         '''
+
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.pushButton.setText(_translate("MainWindow", "Connect"))
@@ -454,6 +455,7 @@ class RelialokMainWindow(object):
                 self.threadpool.clear()
                 self.serial.disconnect()
                 self.led_25.setChecked(False)
+                self.pushButton_3.setEnabled(True)
             except Exception as ex:
                 pass
         else:
@@ -532,6 +534,7 @@ class RelialokMainWindow(object):
 
                 # Execute
                 self.threadpool.start(worker, priority=3)
+                self.pushButton_3.setEnabled(False)
             except Exception as ex:
                 self.print_output('Error listening on port: {0}. Check log for more details.'.format(ex))
         else:
