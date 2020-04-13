@@ -114,15 +114,6 @@ class RelialokMainWindow(object):
         font.setWeight(75)
 
         # Place & configure buttons
-        self.pushButton_3 = QtWidgets.QPushButton(self.gridLayoutWidget_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.pushButton_3.sizePolicy().hasHeightForWidth())
-        self.pushButton_3.setSizePolicy(sizePolicy)
-        self.pushButton_3.setAutoFillBackground(False)
-        self.pushButton_3.setObjectName("pushButton_3")
-        self.gridLayout_2.addWidget(self.pushButton_3, 1, 0, 1, 1)
 
         self.pushButton_4 = QtWidgets.QPushButton(self.gridLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -131,7 +122,7 @@ class RelialokMainWindow(object):
         sizePolicy.setHeightForWidth(self.pushButton_4.sizePolicy().hasHeightForWidth())
         self.pushButton_4.setSizePolicy(sizePolicy)
         self.pushButton_4.setObjectName("pushButton_4")
-        self.gridLayout_2.addWidget(self.pushButton_4, 2, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.pushButton_4, 1, 0, 1, 1)
 
         self.pushButton_5 = QtWidgets.QPushButton(self.gridLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -140,7 +131,7 @@ class RelialokMainWindow(object):
         sizePolicy.setHeightForWidth(self.pushButton_5.sizePolicy().hasHeightForWidth())
         self.pushButton_5.setSizePolicy(sizePolicy)
         self.pushButton_5.setObjectName("pushButton_5")
-        self.gridLayout_2.addWidget(self.pushButton_5, 4, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.pushButton_5, 3, 0, 1, 1)
 
         self.pushButton_6 = QtWidgets.QPushButton(self.gridLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -149,7 +140,7 @@ class RelialokMainWindow(object):
         sizePolicy.setHeightForWidth(self.pushButton_6.sizePolicy().hasHeightForWidth())
         self.pushButton_6.setSizePolicy(sizePolicy)
         self.pushButton_6.setObjectName("pushButton_6")
-        self.gridLayout_2.addWidget(self.pushButton_6, 3, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.pushButton_6, 2, 0, 1, 1)
 
         # Define readout LEDs and place in GUI structure
 
@@ -385,7 +376,6 @@ class RelialokMainWindow(object):
         # Button hooks
         self.pushButton.clicked.connect(self.connect)
         self.pushButton_2.clicked.connect(self.disconnect)
-        self.pushButton_3.clicked.connect(self.listen)
         self.pushButton_4.clicked.connect(self.get_status)
         self.pushButton_6.clicked.connect(lambda: self.decode('DISABLE '))
         self.pushButton_7.clicked.connect(self.close)
@@ -401,7 +391,6 @@ class RelialokMainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.pushButton.setText(_translate("MainWindow", "Connect"))
         self.pushButton_2.setText(_translate("MainWindow", "Disconnect"))
-        self.pushButton_3.setText(_translate("MainWindow", "Listen"))
         self.pushButton_4.setText(_translate("MainWindow", "Status"))
         self.pushButton_5.setText(_translate("MainWindow", "Reset"))
         self.pushButton_6.setText(_translate("MainWindow", "Disable"))
@@ -430,6 +419,7 @@ class RelialokMainWindow(object):
         self.print_output("Initializing serial connection on port: {port}".format(port=self.comboBox.currentText()))
         self.serial = SerialPort(self.comboBox.currentText())
         self.connection_open = True
+        self.listen()
 
     def close(self):
         '''
@@ -455,7 +445,6 @@ class RelialokMainWindow(object):
                 self.threadpool.clear()
                 self.serial.disconnect()
                 self.led_25.setChecked(False)
-                self.pushButton_3.setEnabled(True)
             except Exception as ex:
                 pass
         else:
@@ -534,7 +523,6 @@ class RelialokMainWindow(object):
 
                 # Execute
                 self.threadpool.start(worker, priority=3)
-                self.pushButton_3.setEnabled(False)
             except Exception as ex:
                 self.print_output('Error listening on port: {0}. Check log for more details.'.format(ex))
         else:
